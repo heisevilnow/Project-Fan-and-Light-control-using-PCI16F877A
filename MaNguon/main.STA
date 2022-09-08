@@ -1,0 +1,124 @@
+
+ROM used:   4526/8192 (55%)
+            5442/8192 (66%) including unused fragments
+
+            1.2 Average locations per line
+            4.8 Average locations per statement
+
+RAM used:   52/368 (14%) at main() level
+            96/368 (26%) worst case
+
+Stack used: 8 worst case (6 in main + 2 for interrupts)
+Stack size: 8
+
+Lines Stmts  %   Files
+----- ----- ---  -----
+  757   590  63  main.c
+   11     0   0  main.h
+  671     0   0  C:\Program Files (x86)\PICC\Devices\16F877A.h
+  249    88   9  lcd.h
+ 2229   257  27  C:\Program Files (x86)\PICC\Drivers\math.h
+----- -----
+ 3917   935 Total
+
+Page ROM  %  RAM   Vol Diff  Functions:
+---- --- --- ---   --- ----  ----------
+0     63   1   10             @FLT
+ Inline         2             @ITOF
+0    117   3   13             @MULFF
+0    225   5   14             @DIVFF
+0     21   0    1             @delay_ms2
+0      8   0    0             @const783
+0    140   3    2   594  4.3  lcd_init
+ Inline         3   620  3.8  lcd_read_byte
+ Inline         2   204  3.2  lcd_read_nibble
+0    264   6    3   313  3.4  lcd_send_byte
+ Inline         1   336  1.9  lcd_send_nibble
+0     35   1    4   335  5.5  lcd_gotoxy
+0     36   1    1   289  3.1  lcd_putc
+0     32   1    1   197  1.8  hienthi
+0     11   0    0             @const814
+0     86   2    4             @PSTRINGC7_781
+0     11   0    0             @const816
+0     32   1    1   197  1.8  hienthi_mode
+0     11   0    0             @const820
+0     11   0    0             @const821
+0     24   1    0   110  1.6  xoamanhinh
+0      9   0    0             @const827
+0      9   0    0             @const828
+0     32   1    1   197  1.8  mode_manual
+0      8   0    0             @const831
+0      8   0    0             @const832
+1     43   1    1   197  1.8  luachon_caidat
+0      8   0    0             @const836
+0      8   0    0             @const837
+1     44   1    1   197  1.8  caidat_fan
+0      5   0    0             @const841
+0      5   0    0             @const842
+1     44   1    1   197  1.8  timerbattat_den
+0      8   0    0             @const846
+0      8   0    0             @const847
+1     62   1    1   322  3.2  caidat_light
+0      8   0    0             @const851
+0      8   0    0             @const852
+0      4   0    0             @const853
+ Inline         0    48  1.1  timer_battatden
+0     13   0    0    48  1.1  timer_nhietdo
+ Inline         0   398  6.1  battatden
+ Inline         4   142  3.3  delaytimer_2s
+0     54   1    0    56  1.9  TIMER0_isr
+0    135   3    0    56  1.9  TIMER1_isr
+0     82   2    1   601  3.3  display_onoff
+0      4   0    0             @const870
+0      4   0    0             @const871
+0      4   0    0             @const872
+0      4   0    0             @const873
+0      3   0    0             @const874
+0      3   0    0             @const875
+0    237   5    2   297  5.3  bat_tat_quat
+1    290   6    1  2954  7.9  xuli_FAN
+0      1   0    0             @const881
+ Inline         3             @DIV88
+1    134   3    6             @PRINTF_D_781
+0      1   0    0             @const890
+0      1   0    0             @const891
+0      1   0    0             @const894
+1    135   3    2  1317  7.7  xuli_LIGHT
+2   1346  30    1 14539  9.0  MAIN
+0      7   0    0             @const903
+0      7   0    0             @const904
+0      6   0    0             @const906
+0     89   2    5             @PSTRINGCN7_781
+ Inline         5             @FTOSD
+ Inline        13             @DIV3232
+1    396   9   13             @PRINTF_L32D_781FPFPF
+0      1   0    0             @const917
+0      8   0    0             @const918
+0      8   0    0             @const919
+0      8   0    0             @const920
+0      8   0    0             @const921
+ Inline         0             @cinit1
+
+Program metrics:
+    Functions               26
+    Statements              935
+    Comments                550
+    Volume (V)              35368
+    Difficulty (D)          90.1
+    Effort to implement (E) 3185499
+    Time to implement (T)   49 hours, 10 minutes
+    Est Delivered Bugs (B)  7
+    Cyclomatic Complexity   95
+    Maintainability (MI)    112
+
+ Segment     Used  Free
+-----------  ----  ----
+00000-00003     4  0  
+00004-00057    84  0  
+00058-007FF  1944  16  
+00800-00FFF  1148  900  
+01000-017FF  1346  702  
+01800-01FFF     0  2048  
+
+
+

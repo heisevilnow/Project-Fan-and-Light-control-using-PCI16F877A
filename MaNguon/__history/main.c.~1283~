@@ -1,0 +1,752 @@
+#include <main.h>
+#define UP input(PIN_B0)
+#define DOWN input(PIN_B1)
+#define OK input(PIN_B2)
+#define BACK input(PIN_B3)
+#define BTN_DEN input(PIN_B4)
+#define BTN_QUAT input(PIN_B5)
+#define BTN_QUAT2 input(PIN_C0)
+//!
+//!#define SPBRG (int8*)0x99
+//!#define RCSTA (int8*)0x18
+//!#define TXSTA (int*)0x98
+//!
+Typedef struct NGUONG
+{
+   int TOP;
+   int BOT;
+}Nguong;
+unsigned char select = 1;
+int time = 0;
+long time1 = 0;
+int time_light = 0;
+int flag_dasetup = 0;
+int flag = 1;
+int flag_manual = 0;
+int flag_battatden = 0;
+float Tam;
+float GiatriADC;
+float Nhietdo;
+int dem1 = 0;
+int bien_light;
+int bien_auto = 0;
+int lockquat =0;
+Nguong Nguongnhietdo = {45,40};
+void hienthi(unsigned char select)
+{       
+   lcd_gotoxy(1, 1);
+   printf(lcd_putc,"     DISPLAY        ");
+   lcd_gotoxy(1, 2);
+   printf(lcd_putc,"     SETTING        ");   
+   lcd_gotoxy(1,select);
+   printf(lcd_putc,">"); 
+}
+void hienthi_mode(unsigned char select)
+{       
+   lcd_gotoxy(1, 1);
+   printf(lcd_putc,"     MANUAL         ");
+   lcd_gotoxy(1, 2);
+   printf(lcd_putc,"     AUTO           ");   
+   lcd_gotoxy(1,select);
+   printf(lcd_putc,">"); 
+}
+void print_select(unsigned char select)
+{
+   lcd_gotoxy(1,select);
+   printf(lcd_putc,">"); 
+}
+void xoamanhinh()
+{
+   lcd_gotoxy(1, 1);
+   printf(lcd_putc,"                ");
+   lcd_gotoxy(1, 2);
+   printf(lcd_putc,"                "); 
+}
+void mode_manual(unsigned char select)
+{
+   lcd_gotoxy(1, 1);
+   printf(lcd_putc,"    -- ON --   ");
+   lcd_gotoxy(1, 2);
+   printf(lcd_putc,"    -- OFF --  ");   
+   lcd_gotoxy(1,select);
+   printf(lcd_putc,">"); 
+}
+void luachon_caidat(unsigned char select)
+{
+   lcd_gotoxy(0, 1);
+   printf(lcd_putc,"    -- FAN --  ");
+   lcd_gotoxy(0, 2);
+   printf(lcd_putc,"    -- LED --  ");   
+   lcd_gotoxy(1,select);
+   printf(lcd_putc,">"); 
+}
+
+void caidat_fan(unsigned char select)
+{
+   lcd_gotoxy(1, 1);
+   printf(lcd_putc,"     TOP:");
+   lcd_gotoxy(1, 2);
+   printf(lcd_putc,"     BOT:");   
+   lcd_gotoxy(1,select);
+   printf(lcd_putc,">"); 
+}
+void timerbattat_den(unsigned char select)
+{
+   lcd_gotoxy(1, 1);
+   printf(lcd_putc,"  --TIMER ON--"); 
+   lcd_gotoxy(1, 2);
+   printf(lcd_putc,"  --TIMER OFF--");
+   lcd_gotoxy(1,select);
+   printf(lcd_putc,">"); 
+}
+void caidat_light(unsigned char select)
+{
+   if(select==1)
+   {
+      lcd_gotoxy(1, 1);
+      printf(lcd_putc,"  --TIMER ON--"); 
+   }
+   else 
+   {
+      lcd_gotoxy(1, 1);
+      printf(lcd_putc,"  --TIMER OFF--"); 
+   }
+   lcd_gotoxy(1, 2);
+   printf(lcd_putc,"  TIME:");
+   lcd_gotoxy(15, 2);
+   printf(lcd_putc,"m");
+}
+
+void timer_battatden()
+{
+   set_timer0(61);
+   enable_interrupts(INT_TIMER0);
+   enable_interrupts(GlOBAL);
+}
+void timer_nhietdo()
+{
+   set_timer1(15536);
+   enable_interrupts(INT_TIMER1);
+   enable_interrupts(GlOBAL);
+}
+void battatden()
+{
+   if(dem1==bien_light && flag == 1 )
+   {
+      if(flag_battatden==1)
+         output_high(PIN_B6);
+      else
+         output_low(PIN_B6);
+      dem1 = 0;
+      flag = 0;
+   }
+   else if(time1==6000 && flag_dasetup ==1 && flag ==1 )  //60s
+   {
+      dem1=dem1+1;
+      time1 = 0;
+      time_light = (time_light>0) ? time_light-1 : 0; 
+   } 
+}
+int time2 = 0;
+int time3 = 0;
+int count = 0;
+int count1 = 0;
+int count2 = 0;
+void delaytimer_1s_onofffan()
+{
+   if(time3==100)
+   {
+      if(Nhietdo>=Nguongnhietdo.BOT && Nhietdo<=Nguongnhietdo.TOP)
+      {
+         count = count + 1;
+         time3 = 0;
+      }
+      else if(Nhietdo<Nguongnhietdo.BOT)
+      {
+         count1 = count1 + 1;
+         time3 = 0;
+      }
+      else if(Nhietdo>Nguongnhietdo.TOP)
+      {
+         count2 = count2 + 1;
+         time3 = 0;
+      }      
+   }
+}
+void delaytimer_2s()
+{
+   if(time2==200)
+   {
+      GiatriADC = read_adc();
+      Tam = GiatriADC*5/1023.0f;
+      Nhietdo = Tam/0.01; 
+      time2=0;
+   }
+}
+
+#int_TIMER0
+void TIMER0_isr() 
+{
+   set_timer0(61);   //10ms
+   time1 = time1 +1;
+   battatden();
+}
+
+#int_TIMER1
+void TIMER1_isr() 
+{
+   set_timer1(15536);   //10ms
+   time2 = time2 +1;
+   time3 = time3 +1;
+   delaytimer_2s();
+   delaytimer_1s_onofffan();
+}
+
+void delaytimer0_10ms(void)
+{
+   set_timer0(0);
+   while(get_timer0()<195);
+   time = time + 1;
+}
+int a =0;
+void display_onoff()
+{
+   
+    if(input_state(PIN_B7)==1)
+    {
+      lcd_gotoxy(2, 1);
+      printf(lcd_putc,"F1:ON ");           
+    }
+    else
+    {
+      lcd_gotoxy(2, 1);
+      printf(lcd_putc,"F1:OFF");          
+    }
+    if(input_state(PIN_C1)==1)
+    {
+      lcd_gotoxy(10, 1);
+      printf(lcd_putc,"F2:ON ");           
+    }
+    else
+    {
+      lcd_gotoxy(10, 1);
+      printf(lcd_putc,"F2:OFF");          
+    }
+    if(input_state(PIN_B6)==1)
+    {
+      lcd_gotoxy(2, 2);
+      printf(lcd_putc,"L:ON ");            
+    }
+    else
+    {
+      lcd_gotoxy(2, 2);
+      printf(lcd_putc,"L:OFF");              
+    }
+}
+
+void bat_tat_quat(int top,int bot)
+{
+   if(Nhietdo>top && count2 ==3)
+   {
+      output_high(PIN_B7);
+      output_high(PIN_C1);
+      count2 = 0;
+   }
+   else if(Nhietdo>=bot && Nhietdo<=top && count ==3)
+   {
+      output_high(PIN_B7);
+      output_low(PIN_C1);
+      count = 0;
+   }
+   else if(Nhietdo<bot && count1 ==3)
+   {
+      //output_low(PIN_B7);
+      output_bit(PIN_B7,0);
+      output_low(PIN_C1);
+      count1 =0;
+   }
+}
+void xuli_FAN(void)
+{
+   while(TRUE)
+   {
+      bat_tat_quat(Nguongnhietdo.TOP,Nguongnhietdo.BOT);
+      delay_MS(100);
+      if(UP==0)
+      {
+         while(UP==0);
+         select = (select == 1)? 2: select-1;
+         caidat_fan(select);
+      }
+      else if(DOWN==0)
+      {
+         while(DOWN==0);
+         select = (select == 2)? 1: select+1;
+         caidat_fan(select);
+      }
+      if(OK==0 && select == 1)  //CHONTOP
+      {
+         while(OK==0);
+         lcd_gotoxy(16, 1);
+         lcd_putc("*");
+         while(TRUE)
+         {
+            if(UP==0)
+            {
+               while(UP==0);
+                lcd_gotoxy(12, 1);
+                printf(lcd_putc,"%3d",Nguongnhietdo.TOP  = Nguongnhietdo.TOP +1);
+            }
+            else if(DOWN==0)
+            {
+               while(DOWN==0);
+                lcd_gotoxy(12, 1);
+                printf(lcd_putc,"%3d",Nguongnhietdo.TOP  = Nguongnhietdo.TOP -1);
+            }
+            else if(OK==0)
+            {
+               while(OK==0);
+               lcd_gotoxy(16, 1);
+               lcd_putc(" ");
+               break;     
+            }
+         }
+      }
+      if(OK==0 && select == 2) //CHONBOT
+      {
+         while(OK==0);
+         lcd_gotoxy(16, 2);
+         lcd_putc("*");
+         while(TRUE)
+         {
+            if(UP==0)
+            {
+               while(UP==0);
+                lcd_gotoxy(12, 2);
+                printf(lcd_putc,"%3d",Nguongnhietdo.BOT  = Nguongnhietdo.BOT +1);
+            }
+            else if(DOWN==0)
+            {
+               while(DOWN==0);
+                lcd_gotoxy(12, 2);
+                printf(lcd_putc,"%3d",Nguongnhietdo.BOT  = Nguongnhietdo.BOT -1);
+            } 
+            else if(OK==0)
+            {
+               while(OK==0);
+               lcd_gotoxy(16, 2);
+               lcd_putc(" ");
+               break;
+            }
+         }                           
+      }
+      if(BACK==0)
+      {
+         while(BACK==0);
+         xoamanhinh();
+         luachon_caidat(select);
+         break;
+      }
+   }
+}
+void xuli_LIGHT(unsigned char select)
+{
+   while(TRUE)
+   {                    
+      if(UP==0)
+      {
+         while(UP==0);
+          lcd_gotoxy(10, 2);
+          printf(lcd_putc,"%3d",time_light = time_light+1);
+      }
+      else if(DOWN==0)
+      {
+         while(DOWN==0);
+          lcd_gotoxy(10, 2);
+          printf(lcd_putc,"%3d",time_light = (time_light>0) ? time_light-1 : 0);
+      }        
+      else if(OK==0)
+      {
+         while(OK==0);
+         caidat_light(select);
+         bien_light = time_light;
+         timer_battatden();
+         flag = 1;
+         time1 = 0;
+      }
+      else if(time1==6000 && flag ==1)  //1m
+       {
+         dem1=dem1+1;
+         time1 = 0;
+         lcd_gotoxy(10, 2);
+         printf(lcd_putc,"%3d",time_light = (time_light>0) ? time_light-1 : 0);  
+      }                        
+      else if(BACK==0)
+      {
+         while(BACK==0);
+         xoamanhinh();
+         timerbattat_den(select);
+         flag_dasetup = 1;     
+         break;
+      }
+   }
+}
+void main()
+{
+   lcd_init();
+   lcd_gotoxy(1, 1);
+   printf(lcd_putc,"     DISPLAY");
+   lcd_gotoxy(1, 2);
+   printf(lcd_putc,"     SETTING");
+   lcd_gotoxy(1,1);
+   printf(lcd_putc,">"); 
+   setup_timer_0(T0_INTERNAL|T0_DIV_256);
+   setup_timer_1(T1_INTERNAL|T1_DIV_BY_1);
+   setup_adc(ADC_CLOCK_INTERNAL);
+   setup_adc(AN0_AN1_VSS_VREF);
+   set_adc_channel(0);
+   output_low(PIN_B6); 
+   output_low(PIN_B7); 
+   output_low(PIN_C1); 
+   timer_nhietdo();  
+   while(TRUE)
+   {
+      if(UP==0)
+      {
+         while(UP==0);
+         select = (select == 1)? 2: select-1;
+         hienthi(select);
+      }
+      else if(DOWN==0)
+      {
+         while(DOWN==0);
+         select = (select == 2)? 1: select+1;
+         hienthi(select);
+      } 
+      ////////////DISPLAY////////////////
+      if(OK==0 && select == 1)
+      {
+         while(OK==0);
+         xoamanhinh();
+         select = 1;
+         while(TRUE)
+         {
+            display_onoff();
+            delay_ms(500);
+            lcd_gotoxy(8,2);
+            printf(lcd_putc,"Temp:%02.0f",Nhietdo);
+            lcd_putc(223);
+            lcd_putc("C");
+            if(BACK==0)
+            {
+               while(BACK==0);
+               xoamanhinh();
+               hienthi(select);
+               break;
+            }
+            else if(BTN_QUAT==0)
+            {
+              while(BTN_QUAT==0);
+              delay_ms(200);
+              if(flag_manual!=0)
+               output_toggle(PIN_B7);
+            }
+            else if(BTN_DEN==0)
+            {
+              while(BTN_DEN==0);
+              delay_ms(200);
+              if(flag_manual!=0)
+               output_toggle(PIN_B6);
+            }
+            else if(BTN_QUAT2==0)
+            {
+              while(BTN_QUAT2==0);
+              delay_ms(200);
+              if(flag_manual!=0)
+               output_toggle(PIN_C1);
+            } 
+            else if(bien_auto==1)
+            {
+               bat_tat_quat(Nguongnhietdo.TOP,Nguongnhietdo.BOT);
+            }
+         }
+      }
+      ////////////SETTING////////////////
+      else if(OK==0 && select == 2)
+      {
+         while(OK==0);
+         xoamanhinh();
+         hienthi_mode(select);
+         while(TRUE)
+         {
+            if(UP==0)
+            {
+               while(UP==0);
+               select = (select == 1)? 2: select-1;
+               hienthi_mode(select);
+            }
+            else if(DOWN==0)
+            {
+               while(DOWN==0);
+               select = (select == 2)? 1: select+1;
+               hienthi_mode(select);
+            }
+            else if(BACK==0)
+            {
+               while(BACK==0);
+               xoamanhinh();
+               hienthi(select);
+               break;
+            }
+            else if(BTN_QUAT==0)
+            {
+               while(BTN_QUAT==0);
+               delay_ms(200);
+               if(flag_manual!=0)
+               output_toggle(PIN_B7);
+            }
+            else if(BTN_DEN==0)
+            {
+               while(BTN_DEN==0);
+               delay_ms(200);
+               if(flag_manual!=0)
+               output_toggle(PIN_B6);
+            }  
+            else if(BTN_QUAT2==0)
+            {
+               while(BTN_QUAT2==0);
+               delay_ms(200);
+               if(flag_manual!=0)
+               output_toggle(PIN_C1);
+            } 
+            ////////////MANUAL////////////////
+            else if(OK==0 && select==1)
+            {
+               while(OK==0);
+               mode_manual(select);
+               bien_auto = 0;
+               while(TRUE)
+               {
+                  if(UP==0)
+                  {
+                     while(UP==0);
+                     select = (select == 1)? 2: select-1;
+                     mode_manual(select);
+                     a=1;
+                  }
+                  else if(DOWN==0)
+                  {
+                     while(DOWN==0);
+                     select = (select == 2)? 1: select+1;
+                     mode_manual(select);
+                     a=1;
+                  }               
+                  else if(BACK==0)
+                  {
+                     while(BACK==0);
+                     xoamanhinh();
+                     hienthi_mode(select);
+                     break;
+                  }
+                  else if(BTN_QUAT==0)
+                  {
+                    while(BTN_QUAT==0);
+                    delay_ms(200);
+                    if(flag_manual!=0)
+                    output_toggle(PIN_B7);
+                  }
+                  else if(BTN_DEN==0)
+                  {
+                    while(BTN_DEN==0);
+                    delay_ms(200);
+                    if(flag_manual!=0)
+                    output_toggle(PIN_B6);
+                  }  
+                  else if(BTN_QUAT2==0)
+                  {
+                     while(BTN_QUAT2==0);
+                     delay_ms(200);
+                     if(flag_manual!=0)
+                     output_toggle(PIN_C1);
+                  }                  
+                  else if(OK==0 && select == 1)
+                  {
+                    while(OK==0);
+                     lcd_gotoxy(1,1);
+                     printf(lcd_putc,"  -- MANUAL --");                    
+                     lcd_gotoxy(1,2);
+                     printf(lcd_putc,"   READY !!!  ");
+                     flag_manual = 1;
+                     select = 1;
+                     while(TRUE)
+                     {
+                         if(BACK==0)
+                        {
+                           while(BACK==0);
+                           xoamanhinh();
+                           mode_manual(select);
+                           break;
+                        }
+                        else if(BTN_QUAT==0)
+                        {
+                           while(BTN_QUAT==0);
+                           delay_ms(200);
+                           if(flag_manual!=0)
+                              output_toggle(PIN_B7);
+                        }
+                        else if(BTN_DEN==0)
+                        {
+                           while(BTN_DEN==0);
+                           delay_ms(200);
+                           if(flag_manual!=0)
+                              output_toggle(PIN_B6);
+                        }
+                         else if(BTN_QUAT2==0)
+                        {
+                           while(BTN_QUAT2==0);
+                           delay_ms(200);
+                           if(flag_manual!=0)
+                              output_toggle(PIN_C1);
+                        } 
+                     }
+                  }     
+                  else if(OK==0 && select == 2)
+                  {
+                     while(OK==0);
+                     lcd_gotoxy(1,1);
+                     printf(lcd_putc,"  -- MANUAL --");                    
+                     lcd_gotoxy(1,2);
+                     printf(lcd_putc,"   SHUTDOWN !!!");
+                     flag_manual =0;
+                     select = 1;
+                     while(TRUE)
+                     {
+                         if(BACK==0)
+                        {
+                           while(BACK==0);
+                           xoamanhinh();
+                           mode_manual(select);
+                           break;
+                        }
+                        else if(BTN_QUAT==0)
+                        {
+                           while(BTN_QUAT==0);
+                           if(flag_manual!=0)
+                           output_toggle(PIN_B7);
+                        }
+                        else if(BTN_DEN==0)
+                        {
+                           while(BTN_DEN==0);
+                           if(flag_manual!=0)
+                           output_toggle(PIN_B6);
+                        }
+                         else if(BTN_QUAT2==0)
+                        {
+                           while(BTN_QUAT2==0);
+                           if(flag_manual!=0)
+                           output_toggle(PIN_C1);
+                        } 
+                     }                     
+                  }                  
+               }
+            }
+            ////////////AUTO////////////////
+            else if(OK==0 && select==2)
+            {
+               while(OK==0);
+               xoamanhinh();
+               luachon_caidat(select);
+               bien_auto = 1;
+               lockquat = 1;
+               while(TRUE)
+               {
+                  bat_tat_quat(Nguongnhietdo.TOP,Nguongnhietdo.BOT);
+                  if(UP==0)
+                  {
+                     while(UP==0);
+                     select = (select == 1)? 2: select-1;
+                     luachon_caidat(select);
+                  }
+                  else if(DOWN==0)
+                  {
+                     while(DOWN==0);
+                     select = (select == 2)? 1: select+1;
+                     luachon_caidat(select);
+                  }
+                  else if(BACK==0)
+                  {
+                     while(BACK==0);
+                     xoamanhinh();
+                     hienthi_mode(select);
+                     break;
+                  }
+                  ////////////////FAN/////////////////
+                  else if(OK==0 && select == 1)
+                  {
+                     while(OK==0);
+                     xoamanhinh();
+                     caidat_fan(select);
+                     lcd_gotoxy(12, 1);
+                     printf(lcd_putc,"%3d",Nguongnhietdo.TOP);
+                     lcd_gotoxy(12, 2);
+                     printf(lcd_putc,"%3d",Nguongnhietdo.BOT);   
+                     xuli_FAN();
+                  }
+                  ////////////////LIGHT/////////////////
+                  else if(OK==0 && select == 2)
+                  {
+                     while(OK==0);
+                     xoamanhinh();
+                     timerbattat_den(select);
+                     while(TRUE)
+                     {
+                        if(UP==0)
+                        {
+                           while(UP==0);
+                           select = (select == 1)? 2: select-1;
+                           timerbattat_den(select);
+                        }
+                        else if(DOWN==0)
+                        {
+                           while(DOWN==0);
+                           select = (select == 2)? 1: select+1;
+                           timerbattat_den(select);
+                        }   
+                        else if(BACK==0)
+                        {
+                           while(BACK==0);
+                           xoamanhinh();
+                           luachon_caidat(select);
+                           break;
+                        } 
+                        else if(OK==0 && select == 1) 
+                        {
+                           while(OK==0);
+                           xoamanhinh();
+                           caidat_light(select);
+                           lcd_gotoxy(10, 2);
+                           printf(lcd_putc,"%3d",time_light);
+                           flag_dasetup = 0;
+                           flag_battatden = 1;
+                           xuli_LIGHT(select);
+                        }
+                        else if(OK==0 && select == 2)
+                        {
+                           while(OK==0);
+                           xoamanhinh();
+                           caidat_light(select);
+                           lcd_gotoxy(10, 2);
+                           printf(lcd_putc,"%3d",time_light);
+                           flag_dasetup = 0;
+                           flag_battatden = 0;
+                           xuli_LIGHT(select);
+                        }
+                     }
+                  }
+               }            
+            }
+         }
+      } 
+   }
+}
+
